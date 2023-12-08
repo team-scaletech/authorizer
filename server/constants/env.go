@@ -204,4 +204,7 @@ const (
 	EnvKeyTwilioAccountSID = "TWILIO_ACCOUNT_SID"
 	// EnvKeyTwilioSender key for env variable TWILIO_SENDER
 	EnvKeyTwilioSender = "TWILIO_SENDER"
+
+	// EnvKeyRateLimit key for setting up rate limiter
+	EnvKeyRateLimit = "RATE_LIMIT"
 )

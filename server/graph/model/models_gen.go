@@ -130,6 +130,7 @@ type Env struct {
 	DisablePlayground                bool     `json:"DISABLE_PLAYGROUND"`
 	DisableMailOtpLogin              bool     `json:"DISABLE_MAIL_OTP_LOGIN"`
 	DisableTotpLogin                 bool     `json:"DISABLE_TOTP_LOGIN"`
+	RateLimit                        *string  `json:"RATE_LIMIT,omitempty"`
 }
 
 type Error struct {
@@ -397,6 +398,7 @@ type UpdateEnvInput struct {
 	DisablePlayground                *bool    `json:"DISABLE_PLAYGROUND,omitempty"`
 	DisableMailOtpLogin              *bool    `json:"DISABLE_MAIL_OTP_LOGIN,omitempty"`
 	DisableTotpLogin                 *bool    `json:"DISABLE_TOTP_LOGIN,omitempty"`
+	RateLimit                        *string  `json:"RATE_LIMIT,omitempty"`
 }
 
 type UpdateProfileInput struct {

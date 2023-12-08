@@ -122,6 +122,8 @@ func InitAllEnv() error {
 	osDefaultRoles := os.Getenv(constants.EnvKeyDefaultRoles)
 	osProtectedRoles := os.Getenv(constants.EnvKeyProtectedRoles)
 
+	osRateLimit := os.Getenv(constants.EnvKeyRateLimit)
+
 	ienv, ok := envData[constants.EnvKeyEnv]
 	if !ok || ienv == "" {
 		envData[constants.EnvKeyEnv] = osEnv
@@ -142,6 +144,14 @@ func InitAllEnv() error {
 		} else {
 			envData[constants.EnvKeyIsProd] = false
 		}
+	}
+
+	if val, ok := envData[constants.EnvKeyRateLimit]; !ok || val == "" {
+		envData[constants.EnvKeyRateLimit] = osRateLimit
+	}
+
+	if osRateLimit != "" && envData[constants.EnvKeyRateLimit] != osRateLimit {
+		envData[constants.EnvKeyRateLimit] = osRateLimit
 	}
 
 	if val, ok := envData[constants.EnvAwsRegion]; !ok || val == "" {

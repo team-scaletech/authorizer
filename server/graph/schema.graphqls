@@ -189,6 +189,7 @@ type Env {
   DISABLE_PLAYGROUND: Boolean!
   DISABLE_MAIL_OTP_LOGIN: Boolean!
   DISABLE_TOTP_LOGIN: Boolean!
+  RATE_LIMIT: String
 }
 
 type ValidateJWTTokenResponse {
@@ -316,6 +317,7 @@ input UpdateEnvInput {
   DISABLE_PLAYGROUND: Boolean
   DISABLE_MAIL_OTP_LOGIN: Boolean
   DISABLE_TOTP_LOGIN: Boolean
+  RATE_LIMIT: String
 }
 
 input AdminLoginInput {

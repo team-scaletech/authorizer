@@ -129,6 +129,7 @@ type ComplexityRoot struct {
 		OrganizationLogo                 func(childComplexity int) int
 		OrganizationName                 func(childComplexity int) int
 		ProtectedRoles                   func(childComplexity int) int
+		RateLimit                        func(childComplexity int) int
 		RedisURL                         func(childComplexity int) int
 		ResetPasswordURL                 func(childComplexity int) int
 		Roles                            func(childComplexity int) int
@@ -926,6 +927,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Env.ProtectedRoles(childComplexity), true
+
+	case "Env.RATE_LIMIT":
+		if e.complexity.Env.RateLimit == nil {
+			break
+		}
+
+		return e.complexity.Env.RateLimit(childComplexity), true
 
 	case "Env.REDIS_URL":
 		if e.complexity.Env.RedisURL == nil {
@@ -2531,6 +2539,7 @@ type Env {
   DISABLE_PLAYGROUND: Boolean!
   DISABLE_MAIL_OTP_LOGIN: Boolean!
   DISABLE_TOTP_LOGIN: Boolean!
+  RATE_LIMIT: String
 }
 
 type ValidateJWTTokenResponse {
@@ -2658,6 +2667,7 @@ input UpdateEnvInput {
   DISABLE_PLAYGROUND: Boolean
   DISABLE_MAIL_OTP_LOGIN: Boolean
   DISABLE_TOTP_LOGIN: Boolean
+  RATE_LIMIT: String
 }
 
 input AdminLoginInput {
@@ -7346,6 +7356,47 @@ func (ec *executionContext) fieldContext_Env_DISABLE_TOTP_LOGIN(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Env_RATE_LIMIT(ctx context.Context, field graphql.CollectedField, obj *model.Env) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Env_RATE_LIMIT(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RateLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Env_RATE_LIMIT(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Env",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Error_message(ctx context.Context, field graphql.CollectedField, obj *model.Error) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Error_message(ctx, field)
 	if err != nil {
@@ -11497,6 +11548,8 @@ func (ec *executionContext) fieldContext_Query__env(ctx context.Context, field g
 				return ec.fieldContext_Env_DISABLE_MAIL_OTP_LOGIN(ctx, field)
 			case "DISABLE_TOTP_LOGIN":
 				return ec.fieldContext_Env_DISABLE_TOTP_LOGIN(ctx, field)
+			case "RATE_LIMIT":
+				return ec.fieldContext_Env_RATE_LIMIT(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Env", field.Name)
 		},
@@ -17986,7 +18039,7 @@ func (ec *executionContext) unmarshalInputUpdateEnvInput(ctx context.Context, ob
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"ACCESS_TOKEN_EXPIRY_TIME", "ADMIN_SECRET", "CUSTOM_ACCESS_TOKEN_SCRIPT", "OLD_ADMIN_SECRET", "SMTP_HOST", "SMTP_PORT", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_LOCAL_NAME", "SENDER_EMAIL", "SENDER_NAME", "JWT_TYPE", "JWT_SECRET", "JWT_PRIVATE_KEY", "JWT_PUBLIC_KEY", "ALLOWED_ORIGINS", "APP_URL", "RESET_PASSWORD_URL", "APP_COOKIE_SECURE", "ADMIN_COOKIE_SECURE", "DISABLE_EMAIL_VERIFICATION", "DISABLE_BASIC_AUTHENTICATION", "DISABLE_MAGIC_LINK_LOGIN", "DISABLE_LOGIN_PAGE", "DISABLE_SIGN_UP", "DISABLE_REDIS_FOR_ENV", "DISABLE_STRONG_PASSWORD", "DISABLE_MULTI_FACTOR_AUTHENTICATION", "ENFORCE_MULTI_FACTOR_AUTHENTICATION", "ROLES", "PROTECTED_ROLES", "DEFAULT_ROLES", "JWT_ROLE_CLAIM", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "FACEBOOK_CLIENT_ID", "FACEBOOK_CLIENT_SECRET", "LINKEDIN_CLIENT_ID", "LINKEDIN_CLIENT_SECRET", "APPLE_CLIENT_ID", "APPLE_CLIENT_SECRET", "TWITTER_CLIENT_ID", "TWITTER_CLIENT_SECRET", "MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET", "MICROSOFT_ACTIVE_DIRECTORY_TENANT_ID", "TWITCH_CLIENT_ID", "TWITCH_CLIENT_SECRET", "ORGANIZATION_NAME", "ORGANIZATION_LOGO", "DEFAULT_AUTHORIZE_RESPONSE_TYPE", "DEFAULT_AUTHORIZE_RESPONSE_MODE", "DISABLE_PLAYGROUND", "DISABLE_MAIL_OTP_LOGIN", "DISABLE_TOTP_LOGIN"}
+	fieldsInOrder := [...]string{"ACCESS_TOKEN_EXPIRY_TIME", "ADMIN_SECRET", "CUSTOM_ACCESS_TOKEN_SCRIPT", "OLD_ADMIN_SECRET", "SMTP_HOST", "SMTP_PORT", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_LOCAL_NAME", "SENDER_EMAIL", "SENDER_NAME", "JWT_TYPE", "JWT_SECRET", "JWT_PRIVATE_KEY", "JWT_PUBLIC_KEY", "ALLOWED_ORIGINS", "APP_URL", "RESET_PASSWORD_URL", "APP_COOKIE_SECURE", "ADMIN_COOKIE_SECURE", "DISABLE_EMAIL_VERIFICATION", "DISABLE_BASIC_AUTHENTICATION", "DISABLE_MAGIC_LINK_LOGIN", "DISABLE_LOGIN_PAGE", "DISABLE_SIGN_UP", "DISABLE_REDIS_FOR_ENV", "DISABLE_STRONG_PASSWORD", "DISABLE_MULTI_FACTOR_AUTHENTICATION", "ENFORCE_MULTI_FACTOR_AUTHENTICATION", "ROLES", "PROTECTED_ROLES", "DEFAULT_ROLES", "JWT_ROLE_CLAIM", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "FACEBOOK_CLIENT_ID", "FACEBOOK_CLIENT_SECRET", "LINKEDIN_CLIENT_ID", "LINKEDIN_CLIENT_SECRET", "APPLE_CLIENT_ID", "APPLE_CLIENT_SECRET", "TWITTER_CLIENT_ID", "TWITTER_CLIENT_SECRET", "MICROSOFT_CLIENT_ID", "MICROSOFT_CLIENT_SECRET", "MICROSOFT_ACTIVE_DIRECTORY_TENANT_ID", "TWITCH_CLIENT_ID", "TWITCH_CLIENT_SECRET", "ORGANIZATION_NAME", "ORGANIZATION_LOGO", "DEFAULT_AUTHORIZE_RESPONSE_TYPE", "DEFAULT_AUTHORIZE_RESPONSE_MODE", "DISABLE_PLAYGROUND", "DISABLE_MAIL_OTP_LOGIN", "DISABLE_TOTP_LOGIN", "RATE_LIMIT"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -18506,6 +18559,15 @@ func (ec *executionContext) unmarshalInputUpdateEnvInput(ctx context.Context, ob
 				return it, err
 			}
 			it.DisableTotpLogin = data
+		case "RATE_LIMIT":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("RATE_LIMIT"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RateLimit = data
 		}
 	}
 
@@ -19462,6 +19524,8 @@ func (ec *executionContext) _Env(ctx context.Context, sel ast.SelectionSet, obj 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "RATE_LIMIT":
+			out.Values[i] = ec._Env_RATE_LIMIT(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

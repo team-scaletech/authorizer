@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/authorizerdev/authorizer/server/authenticators"
+	"github.com/sirupsen/logrus"
 
+	"github.com/authorizerdev/authorizer/server/authenticators"
 	"github.com/authorizerdev/authorizer/server/cli"
 	"github.com/authorizerdev/authorizer/server/constants"
 	"github.com/authorizerdev/authorizer/server/db"
@@ -13,7 +14,6 @@ import (
 	"github.com/authorizerdev/authorizer/server/oauth"
 	"github.com/authorizerdev/authorizer/server/refs"
 	"github.com/authorizerdev/authorizer/server/routes"
-	"github.com/sirupsen/logrus"
 )
 
 // VERSION is used to define the version of authorizer from build tags
@@ -76,7 +76,12 @@ func main() {
 		log.Fatalln("Error while initializing authenticator: ", err)
 	}
 
-	router := routes.InitRouter(log)
+	limit, err := memorystore.Provider.GetStringStoreEnvVariable(constants.EnvKeyRateLimit)
+	if err != nil {
+		log.Fatalln("Error while getting rate limit: ", err)
+	}
+
+	router := routes.InitRouter(log, limit)
 	log.Info("Starting Authorizer: ", VERSION)
 	port, err := memorystore.Provider.GetStringStoreEnvVariable(constants.EnvKeyPort)
 	log.Info("Authorizer running at PORT: ", port)
