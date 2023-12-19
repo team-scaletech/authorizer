@@ -4,19 +4,20 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/gin-gonic/gin"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/authorizerdev/authorizer/server/constants"
 	"github.com/authorizerdev/authorizer/server/memorystore"
 	"github.com/authorizerdev/authorizer/server/parsers"
-	"github.com/gin-gonic/gin"
 )
 
 // SetMfaSession sets the mfa session cookie in the response
 func SetMfaSession(gc *gin.Context, sessionID string) {
 	appCookieSecure, err := memorystore.Provider.GetBoolStoreEnvVariable(constants.EnvKeyAppCookieSecure)
 	if err != nil {
-		log.Debug("Error while getting app cookie secure from env variable: %v", err)
+		log.Debugf("Error while getting app cookie secure from env variable: %v", err)
 		appCookieSecure = true
 	}
 
@@ -51,7 +52,7 @@ func SetMfaSession(gc *gin.Context, sessionID string) {
 func DeleteMfaSession(gc *gin.Context) {
 	appCookieSecure, err := memorystore.Provider.GetBoolStoreEnvVariable(constants.EnvKeyAppCookieSecure)
 	if err != nil {
-		log.Debug("Error while getting app cookie secure from env variable: %v", err)
+		log.Debugf("Error while getting app cookie secure from env variable: %v", err)
 		appCookieSecure = true
 	}
 
@@ -85,5 +86,47 @@ func GetMfaSession(gc *gin.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	return decodedValue, nil
+}
+
+// SetOAuthMfaSession sets the mfa totp cookie in the response
+func SetOAuthMfaSession(gc *gin.Context, id string) {
+	appCookieSecure, err := memorystore.Provider.GetBoolStoreEnvVariable(constants.EnvKeyAppCookieSecure)
+	if err != nil {
+		log.Debugf("Error while getting app cookie secure from env variable: %v", err)
+		appCookieSecure = true
+	}
+
+	secure := appCookieSecure
+	httpOnly := appCookieSecure
+	hostname := parsers.GetHost(gc)
+	host, _ := parsers.GetHostParts(hostname)
+
+	if !appCookieSecure {
+		gc.SetSameSite(http.SameSiteLaxMode)
+	} else {
+		gc.SetSameSite(http.SameSiteNoneMode)
+	}
+
+	// TODO allow configuring from dashboard
+	age := 60
+
+	gc.SetCookie(constants.MfaCookieName+"_oauth_session", id, age, "/", host, secure, httpOnly)
+}
+
+// GetOAuthMfaSession gets the mfa totp cookie from context
+func GetOAuthMfaSession(gc *gin.Context) (string, error) {
+	var cookie *http.Cookie
+	var err error
+	cookie, err = gc.Request.Cookie(constants.MfaCookieName + "_oauth_session")
+	if err != nil {
+		return "", err
+	}
+
+	decodedValue, err := url.PathUnescape(cookie.Value)
+	if err != nil {
+		return "", err
+	}
+
 	return decodedValue, nil
 }

@@ -19,8 +19,10 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/authorizerdev/authorizer/server/authenticators"
 	"github.com/authorizerdev/authorizer/server/constants"
 	"github.com/authorizerdev/authorizer/server/cookie"
+	"github.com/authorizerdev/authorizer/server/crypto"
 	"github.com/authorizerdev/authorizer/server/db"
 	"github.com/authorizerdev/authorizer/server/db/models"
 	"github.com/authorizerdev/authorizer/server/memorystore"
@@ -203,6 +205,128 @@ func OAuthCallbackHandler() gin.HandlerFunc {
 				log.Debug("Failed to update user: ", err)
 				ctx.JSON(500, gin.H{"error": err.Error()})
 				return
+			}
+		}
+
+		isMFAEnforced, err := memorystore.Provider.GetBoolStoreEnvVariable(constants.EnvKeyEnforceMultiFactorAuthentication)
+		if err != nil {
+			log.Debug("MFA service not enabled: ", err)
+			isMFAEnforced = false
+		}
+
+		// Check if MFA is enforced
+		if isMFAEnforced {
+			// Enable multi-factor authentication for the user
+			user.IsMultiFactorAuthEnabled = refs.NewBoolRef(true)
+
+			// Update the user in the database
+			user, err = db.Provider.UpdateUser(ctx, user)
+			if err != nil {
+				log.Debug("Failed to update user: ", err)
+				ctx.JSON(400, gin.H{"error": err.Error()})
+				return
+			}
+		}
+
+		// Check if MFA is disabled
+		isMFADisabled, err := memorystore.Provider.GetBoolStoreEnvVariable(constants.EnvKeyDisableMultiFactorAuthentication)
+		if err != nil || !isMFADisabled {
+			log.Debug("MFA service not enabled: ", err)
+		}
+
+		// Continue processing only if MFA is not disabled
+		if !isMFADisabled {
+			// Check if TOTP login is disabled
+			isTOTPLoginDisabled, err := memorystore.Provider.GetBoolStoreEnvVariable(constants.EnvKeyDisableTOTPLogin)
+			if err != nil || !isTOTPLoginDisabled {
+				log.Debug("totp service not enabled: ", err)
+			}
+
+			var mfaSessionId string
+			// Function to set OTP MFA session
+			setOTPMFaSession := func(expiresAt int64) error {
+				mfaSessionId = uuid.NewString()
+				err = memorystore.Provider.SetMfaSession(user.ID, mfaSessionId, expiresAt)
+				if err != nil {
+					log.Debug("Failed to add mfasession: ", err)
+					return err
+				}
+				cookie.SetMfaSession(ctx, mfaSessionId)
+				return nil
+			}
+
+			// Function to set OAuth MFA session
+			setOAuthMfaSession := func(expiresAt int64, totpInfo string) error {
+				err = memorystore.Provider.SetMfaSession(user.ID, totpInfo, expiresAt)
+				if err != nil {
+					log.Debug("Failed to add mfasession for oauth: ", err)
+					return err
+				}
+				cookie.SetOAuthMfaSession(ctx, mfaSessionId)
+				return nil
+			}
+
+			// If MFA, TOTP, and user has multi-factor authentication enabled
+			if refs.BoolValue(user.IsMultiFactorAuthEnabled) && !isMFADisabled && !isTOTPLoginDisabled {
+				expiresAt := time.Now().Add(3 * time.Minute).Unix()
+
+				// Set OTP MFA session
+				if err := setOTPMFaSession(expiresAt); err != nil {
+					log.Debug("Failed to set mfa session: ", err)
+					ctx.JSON(500, gin.H{"error": err.Error()})
+					return
+				}
+				authenticator, err := db.Provider.GetAuthenticatorDetailsByUserId(ctx, user.ID, constants.EnvKeyTOTPAuthenticator)
+				if err != nil || authenticator == nil || authenticator.VerifiedAt == nil {
+					// Generate TOTP if not already registered
+					authConfig, err := authenticators.Provider.Generate(ctx, user.ID)
+					if err != nil {
+						log.Debug("error while generating base64 url: ", err)
+						ctx.JSON(500, gin.H{"error": err.Error()})
+						return
+					}
+
+					// Prepare TOTP information for encryption
+					recoveryCodes := []string{}
+					for _, code := range authConfig.RecoveryCodes {
+						recoveryCodes = append(recoveryCodes, code)
+					}
+
+					totpInfo := "email=" + *user.Email + "&should_show_totp_screen=true&authenticator_scanner_image=" + authConfig.ScannerImage + "&authenticator_secret=" + authConfig.Secret + "&authenticator_recovery_codes=" + strings.Join(recoveryCodes, " ")
+
+					// Encrypt TOTP information for encryption
+					encodedTotpInfo := crypto.EncryptB64(totpInfo)
+
+					expiresAt := time.Now().Add(3 * time.Minute).Unix()
+					// Set OAuth MFA session
+					if err := setOAuthMfaSession(expiresAt, encodedTotpInfo); err != nil {
+						log.Debug("Failed to set mfa session for oauth: ", err)
+						ctx.JSON(500, gin.H{"error": err.Error()})
+						return
+					}
+
+					// Redirect to OTP verification screen
+					redirectToOtpScreen := "http://localhost:9091/app/verify-otp" + "?" + "redirect_uri=" + redirectURL
+
+					ctx.Redirect(http.StatusFound, redirectToOtpScreen)
+				} else {
+					// Prepare TOTP information for encryption
+					totpInfo := "email=" + *user.Email + "&should_show_totp_screen=true"
+					encodedTotpInfo := crypto.EncryptB64(totpInfo)
+
+					expiresAt := time.Now().Add(3 * time.Minute).Unix()
+					// Set OAuth MFA session for already registered user
+					if err := setOAuthMfaSession(expiresAt, encodedTotpInfo); err != nil {
+						log.Debug("Failed to set mfa session for oauth: ", err)
+						ctx.JSON(500, gin.H{"error": err.Error()})
+						return
+					}
+
+					// Redirect to OTP verification screen
+					redirectToOtpScreen := "http://localhost:9091/app/verify-otp" + "?" + "redirect_uri=" + redirectURL
+
+					ctx.Redirect(http.StatusFound, redirectToOtpScreen)
+				}
 			}
 		}
 
