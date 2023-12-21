@@ -94,7 +94,7 @@ func totpLoginTest(t *testing.T, s TestSetup) {
 		assert.NotEmpty(t, code)
 		// Set mfa cookie session
 		mfaSession := uuid.NewString()
-		memorystore.Provider.SetMfaSession(verifyRes.User.ID, mfaSession, time.Now().Add(1*time.Minute).Unix())
+		memorystore.Provider.SetMfaSession(verifyRes.User.ID, mfaSession, "", time.Now().Add(1*time.Minute).Unix())
 		cookie := fmt.Sprintf("%s=%s;", constants.MfaCookieName+"_session", mfaSession)
 		cookie = strings.TrimSuffix(cookie, ";")
 		req.Header.Set("Cookie", cookie)
@@ -142,7 +142,7 @@ func totpLoginTest(t *testing.T, s TestSetup) {
 		assert.NotEmpty(t, code)
 		// Set mfa cookie session
 		mfaSession = uuid.NewString()
-		memorystore.Provider.SetMfaSession(verifyRes.User.ID, mfaSession, time.Now().Add(1*time.Minute).Unix())
+		memorystore.Provider.SetMfaSession(verifyRes.User.ID, mfaSession, "", time.Now().Add(1*time.Minute).Unix())
 		cookie = fmt.Sprintf("%s=%s;", constants.MfaCookieName+"_session", mfaSession)
 		cookie = strings.TrimSuffix(cookie, ";")
 		req.Header.Set("Cookie", cookie)

@@ -109,7 +109,7 @@ func VerifyOtpResolver(ctx context.Context, params model.VerifyOTPRequest) (*mod
 		db.Provider.DeleteOTP(gc, otp)
 	}
 
-	if _, err := memorystore.Provider.GetMfaSession(user.ID, mfaSession); err != nil {
+	if _, err := memorystore.Provider.GetMfaSession(user.ID, mfaSession, ""); err != nil {
 		log.Debug("Failed to get mfa session: ", err)
 		return res, fmt.Errorf(`invalid session: %s`, err.Error())
 	}

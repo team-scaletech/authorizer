@@ -160,12 +160,12 @@ func LoginResolver(ctx context.Context, params model.LoginInput) (*model.AuthRes
 	}
 	setOTPMFaSession := func(expiresAt int64) error {
 		mfaSession := uuid.NewString()
-		err = memorystore.Provider.SetMfaSession(user.ID, mfaSession, expiresAt)
+		err = memorystore.Provider.SetMfaSession(user.ID, mfaSession, "", expiresAt)
 		if err != nil {
 			log.Debug("Failed to add mfasession: ", err)
 			return err
 		}
-		cookie.SetMfaSession(gc, mfaSession)
+		cookie.SetMfaSession(gc, mfaSession, "")
 		return nil
 	}
 	// If multi factor authentication is enabled and we need to generate OTP for mail / sms based MFA

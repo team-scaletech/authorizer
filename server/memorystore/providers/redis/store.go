@@ -14,6 +14,8 @@ var (
 	stateStorePrefix = "authorizer_state:"
 	// env store prefix
 	envStorePrefix = "authorizer_env"
+	// oauth session prefix
+	MfaOAuthSessionPrefix = "mfa_oauth_sess_"
 )
 
 const mfaSessionPrefix = "mfa_sess_"
@@ -94,25 +96,41 @@ func (c *provider) DeleteSessionForNamespace(namespace string) error {
 }
 
 // SetMfaSession sets the mfa session with key and value of userId
-func (c *provider) SetMfaSession(userId, key string, expiration int64) error {
+func (c *provider) SetMfaSession(userId, key string, value string, expiration int64) error {
 	currentTime := time.Now()
 	expireTime := time.Unix(expiration, 0)
 	duration := expireTime.Sub(currentTime)
-	err := c.store.Set(c.ctx, fmt.Sprintf("%s%s:%s", mfaSessionPrefix, userId, key), userId, duration).Err()
-	if err != nil {
-		log.Debug("Error saving user session to redis: ", err)
-		return err
+	if value == "" {
+		err := c.store.Set(c.ctx, fmt.Sprintf("%s%s:%s", mfaSessionPrefix, userId, key), userId, duration).Err()
+		if err != nil {
+			log.Debug("Error saving user session to redis: ", err)
+			return err
+		}
+	} else {
+		err := c.store.Set(c.ctx, fmt.Sprintf("%s%s:%s", MfaOAuthSessionPrefix, userId, key), value, duration).Err()
+		if err != nil {
+			log.Debug("Error saving user session to redis: ", err)
+			return err
+		}
 	}
 	return nil
 }
 
 // GetMfaSession returns value of given mfa session
-func (c *provider) GetMfaSession(userId, key string) (string, error) {
-	data, err := c.store.Get(c.ctx, fmt.Sprintf("%s%s:%s", mfaSessionPrefix, userId, key)).Result()
-	if err != nil {
-		return "", err
+func (c *provider) GetMfaSession(userId, key string, prefix string) (string, error) {
+	if prefix != "" {
+		data, err := c.store.Get(c.ctx, fmt.Sprintf("%s%s:%s", prefix, userId, key)).Result()
+		if err != nil {
+			return "", err
+		}
+		return data, nil
+	} else {
+		data, err := c.store.Get(c.ctx, fmt.Sprintf("%s%s:%s", mfaSessionPrefix, userId, key)).Result()
+		if err != nil {
+			return "", err
+		}
+		return data, nil
 	}
-	return data, nil
 }
 
 // DeleteMfaSession deletes given mfa session from in-memory store.

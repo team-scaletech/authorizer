@@ -14,7 +14,7 @@ import (
 )
 
 // SetMfaSession sets the mfa session cookie in the response
-func SetMfaSession(gc *gin.Context, sessionID string) {
+func SetMfaSession(gc *gin.Context, sessionID string, oAuthMfaUserId string) {
 	appCookieSecure, err := memorystore.Provider.GetBoolStoreEnvVariable(constants.EnvKeyAppCookieSecure)
 	if err != nil {
 		log.Debugf("Error while getting app cookie secure from env variable: %v", err)
@@ -44,8 +44,14 @@ func SetMfaSession(gc *gin.Context, sessionID string) {
 	// TODO allow configuring from dashboard
 	age := 60
 
-	gc.SetCookie(constants.MfaCookieName+"_session", sessionID, age, "/", host, secure, httpOnly)
-	gc.SetCookie(constants.MfaCookieName+"_session_domain", sessionID, age, "/", domain, secure, httpOnly)
+	if oAuthMfaUserId != "" {
+		gc.SetCookie(constants.MfaCookieName+"_session", sessionID, age, "/", host, secure, httpOnly)
+		gc.SetCookie(constants.MfaCookieName+"_session_domain", sessionID, age, "/", domain, secure, httpOnly)
+		gc.SetCookie(constants.MfaCookieName+"_oauth_session", oAuthMfaUserId, age, "/", host, secure, httpOnly)
+	} else {
+		gc.SetCookie(constants.MfaCookieName+"_session", sessionID, age, "/", host, secure, httpOnly)
+		gc.SetCookie(constants.MfaCookieName+"_session_domain", sessionID, age, "/", domain, secure, httpOnly)
+	}
 }
 
 // DeleteMfaSession deletes the mfa session cookies to expire
@@ -87,31 +93,6 @@ func GetMfaSession(gc *gin.Context) (string, error) {
 		return "", err
 	}
 	return decodedValue, nil
-}
-
-// SetOAuthMfaSession sets the mfa totp cookie in the response
-func SetOAuthMfaSession(gc *gin.Context, id string) {
-	appCookieSecure, err := memorystore.Provider.GetBoolStoreEnvVariable(constants.EnvKeyAppCookieSecure)
-	if err != nil {
-		log.Debugf("Error while getting app cookie secure from env variable: %v", err)
-		appCookieSecure = true
-	}
-
-	secure := appCookieSecure
-	httpOnly := appCookieSecure
-	hostname := parsers.GetHost(gc)
-	host, _ := parsers.GetHostParts(hostname)
-
-	if !appCookieSecure {
-		gc.SetSameSite(http.SameSiteLaxMode)
-	} else {
-		gc.SetSameSite(http.SameSiteNoneMode)
-	}
-
-	// TODO allow configuring from dashboard
-	age := 60
-
-	gc.SetCookie(constants.MfaCookieName+"_oauth_session", id, age, "/", host, secure, httpOnly)
 }
 
 // GetOAuthMfaSession gets the mfa totp cookie from context

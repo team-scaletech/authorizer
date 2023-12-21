@@ -134,12 +134,12 @@ func MobileLoginResolver(ctx context.Context, params model.MobileLoginInput) (*m
 		}
 
 		mfaSession := uuid.NewString()
-		err = memorystore.Provider.SetMfaSession(user.ID, mfaSession, expires)
+		err = memorystore.Provider.SetMfaSession(user.ID, mfaSession, "", expires)
 		if err != nil {
 			log.Debug("Failed to add mfasession: ", err)
 			return nil, err
 		}
-		cookie.SetMfaSession(gc, mfaSession)
+		cookie.SetMfaSession(gc, mfaSession, "")
 
 		go func() {
 			utils.RegisterEvent(ctx, constants.UserLoginWebhookEvent, constants.AuthRecipeMethodMobileBasicAuth, user)

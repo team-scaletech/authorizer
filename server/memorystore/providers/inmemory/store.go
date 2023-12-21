@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/authorizerdev/authorizer/server/constants"
+	"github.com/authorizerdev/authorizer/server/memorystore/providers/redis"
 )
 
 // SetUserSession sets the user session for given user identifier in form recipe:user_id
@@ -43,18 +44,31 @@ func (c *provider) DeleteSessionForNamespace(namespace string) error {
 }
 
 // SetMfaSession sets the mfa session with key and value of userId
-func (c *provider) SetMfaSession(userId, key string, expiration int64) error {
-	c.mfasessionStore.Set(userId, key, userId, expiration)
+func (c *provider) SetMfaSession(userId, key string, value string, expiration int64) error {
+	if value == "" {
+		c.mfasessionStore.Set(userId, key, userId, expiration)
+	} else {
+		c.mfasessionStore.Set(redis.MfaOAuthSessionPrefix+userId, key, value, expiration)
+	}
 	return nil
 }
 
 // GetMfaSession returns value of given mfa session
-func (c *provider) GetMfaSession(userId, key string) (string, error) {
-	val := c.mfasessionStore.Get(userId, key)
-	if val == "" {
-		return "", fmt.Errorf("Not found")
+func (c *provider) GetMfaSession(userId, key string, prefix string) (string, error) {
+	if prefix != "" {
+		val := c.mfasessionStore.Get(prefix+userId, key)
+		if val == "" {
+			return "", fmt.Errorf("not found")
+		}
+		return val, nil
+
+	} else {
+		val := c.mfasessionStore.Get(userId, key)
+		if val == "" {
+			return "", fmt.Errorf("not found")
+		}
+		return val, nil
 	}
-	return val, nil
 }
 
 // DeleteMfaSession deletes given mfa session from in-memory store.

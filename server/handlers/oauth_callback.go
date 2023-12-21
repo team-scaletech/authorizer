@@ -246,23 +246,23 @@ func OAuthCallbackHandler() gin.HandlerFunc {
 			// Function to set OTP MFA session
 			setOTPMFaSession := func(expiresAt int64) error {
 				mfaSessionId = uuid.NewString()
-				err = memorystore.Provider.SetMfaSession(user.ID, mfaSessionId, expiresAt)
+				err = memorystore.Provider.SetMfaSession(user.ID, mfaSessionId, "", expiresAt)
 				if err != nil {
 					log.Debug("Failed to add mfasession: ", err)
 					return err
 				}
-				cookie.SetMfaSession(ctx, mfaSessionId)
+				cookie.SetMfaSession(ctx, mfaSessionId, "")
 				return nil
 			}
 
 			// Function to set OAuth MFA session
 			setOAuthMfaSession := func(expiresAt int64, totpInfo string) error {
-				err = memorystore.Provider.SetMfaSession(user.ID, totpInfo, expiresAt)
+				err = memorystore.Provider.SetMfaSession(user.ID, mfaSessionId, totpInfo, expiresAt)
 				if err != nil {
 					log.Debug("Failed to add mfasession for oauth: ", err)
 					return err
 				}
-				cookie.SetOAuthMfaSession(ctx, mfaSessionId)
+				cookie.SetMfaSession(ctx, mfaSessionId, user.ID)
 				return nil
 			}
 
@@ -293,13 +293,12 @@ func OAuthCallbackHandler() gin.HandlerFunc {
 					}
 
 					totpInfo := "email=" + *user.Email + "&should_show_totp_screen=true&authenticator_scanner_image=" + authConfig.ScannerImage + "&authenticator_secret=" + authConfig.Secret + "&authenticator_recovery_codes=" + strings.Join(recoveryCodes, " ")
-
 					// Encrypt TOTP information for encryption
-					encodedTotpInfo := crypto.EncryptB64(totpInfo)
+					encryptedTotpInfo := crypto.EncryptB64(totpInfo)
 
 					expiresAt := time.Now().Add(3 * time.Minute).Unix()
 					// Set OAuth MFA session
-					if err := setOAuthMfaSession(expiresAt, encodedTotpInfo); err != nil {
+					if err := setOAuthMfaSession(expiresAt, encryptedTotpInfo); err != nil {
 						log.Debug("Failed to set mfa session for oauth: ", err)
 						ctx.JSON(500, gin.H{"error": err.Error()})
 						return
@@ -309,14 +308,15 @@ func OAuthCallbackHandler() gin.HandlerFunc {
 					redirectToOtpScreen := "http://localhost:9091/app/verify-otp" + "?" + "redirect_uri=" + redirectURL
 
 					ctx.Redirect(http.StatusFound, redirectToOtpScreen)
+					return
 				} else {
 					// Prepare TOTP information for encryption
 					totpInfo := "email=" + *user.Email + "&should_show_totp_screen=true"
-					encodedTotpInfo := crypto.EncryptB64(totpInfo)
+					encryptedTotpInfo := crypto.EncryptB64(totpInfo)
 
 					expiresAt := time.Now().Add(3 * time.Minute).Unix()
 					// Set OAuth MFA session for already registered user
-					if err := setOAuthMfaSession(expiresAt, encodedTotpInfo); err != nil {
+					if err := setOAuthMfaSession(expiresAt, encryptedTotpInfo); err != nil {
 						log.Debug("Failed to set mfa session for oauth: ", err)
 						ctx.JSON(500, gin.H{"error": err.Error()})
 						return
@@ -326,6 +326,7 @@ func OAuthCallbackHandler() gin.HandlerFunc {
 					redirectToOtpScreen := "http://localhost:9091/app/verify-otp" + "?" + "redirect_uri=" + redirectURL
 
 					ctx.Redirect(http.StatusFound, redirectToOtpScreen)
+					return
 				}
 			}
 		}

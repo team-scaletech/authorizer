@@ -103,7 +103,7 @@ func resendOTPTest(t *testing.T, s TestSetup) {
 		assert.NotNil(t, user)
 		// Set mfa cookie session
 		mfaSession := uuid.NewString()
-		memorystore.Provider.SetMfaSession(user.ID, mfaSession, time.Now().Add(1*time.Minute).Unix())
+		memorystore.Provider.SetMfaSession(user.ID, mfaSession, "", time.Now().Add(1*time.Minute).Unix())
 		cookie := fmt.Sprintf("%s=%s;", constants.MfaCookieName+"_session", mfaSession)
 		cookie = strings.TrimSuffix(cookie, ";")
 		req.Header.Set("Cookie", cookie)
