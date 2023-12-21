@@ -197,6 +197,11 @@ func (r *queryResolver) ValidateSession(ctx context.Context, params *model.Valid
 	return resolvers.ValidateSessionResolver(ctx, params)
 }
 
+// TotpInfo is the resolver for the totp_info field.
+func (r *queryResolver) TotpInfo(ctx context.Context) (*model.AuthResponse, error) {
+	return resolvers.TotpInfoResolver(ctx)
+}
+
 // Users is the resolver for the _users field.
 func (r *queryResolver) Users(ctx context.Context, params *model.PaginatedInput) (*model.Users, error) {
 	return resolvers.UsersResolver(ctx, params)

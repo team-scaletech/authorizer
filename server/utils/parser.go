@@ -2,6 +2,8 @@ package utils
 
 import (
 	"errors"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -18,4 +20,34 @@ func ParseDurationInSeconds(s string) (time.Duration, error) {
 	}
 
 	return d, nil
+}
+
+// Helper function to parse boolean values
+func ParseBool(value string) *bool {
+	if value == "" {
+		return nil
+	}
+	result, _ := strconv.ParseBool(value)
+	return &result
+}
+
+// Helper function to parse string values
+func ParseString(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+// Helper function to parse string array values
+func ParseStringArray(value string) []*string {
+	if value == "" {
+		return nil
+	}
+	splitValues := strings.Split(value, " ")
+	var result []*string
+	for _, v := range splitValues {
+		result = append(result, &v)
+	}
+	return result
 }
