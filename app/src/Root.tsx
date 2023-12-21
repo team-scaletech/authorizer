@@ -10,6 +10,7 @@ const ResetPassword = lazy(() => import('./pages/rest-password'));
 const Login = lazy(() => import('./pages/login'));
 const Dashboard = lazy(() => import('./pages/dashboard'));
 const SignUp = lazy(() => import('./pages/signup'));
+const VerifyOtp = lazy(() => import('./pages/verify-otp'));
 
 const Wrapper = styled.div`
 	font-family: ${(props) => props.theme.fonts.fontStack};
@@ -120,6 +121,10 @@ export default function Root({
 						</Route>
 						<Route path="/app/setup-password">
 							<SetupPassword />
+						</Route>
+						{/* VerifyOtp component to redirect on VerifyOtp screen when totp is enabled with oauth login*/}
+						<Route path="/app/verify-otp" exact>
+							<VerifyOtp />
 						</Route>
 					</Switch>
 				</Wrapper>

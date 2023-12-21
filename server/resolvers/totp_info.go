@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/authorizerdev/authorizer/server/cookie"
 	"github.com/authorizerdev/authorizer/server/crypto"
@@ -12,6 +13,7 @@ import (
 	"github.com/authorizerdev/authorizer/server/graph/model"
 	"github.com/authorizerdev/authorizer/server/memorystore"
 	"github.com/authorizerdev/authorizer/server/memorystore/providers/redis"
+	"github.com/authorizerdev/authorizer/server/refs"
 	"github.com/authorizerdev/authorizer/server/utils"
 
 	log "github.com/sirupsen/logrus"
@@ -79,12 +81,18 @@ func TotpInfoResolver(ctx context.Context) (*model.AuthResponse, error) {
 		return nil, err
 	}
 
+	// Retrieve the image URL from the query parameters
+	image := queryValues.Get("authenticator_scanner_image")
+
+	// Replace spaces with plus signs in the image URL
+	scannerImage := strings.Replace(image, " ", "+", -1)
+
 	// Create the AuthResponse object with parsed TOTP info
 	res = &model.AuthResponse{
 		Message:                    `Proceed to totp flow`,
 		ShouldShowTotpScreen:       utils.ParseBool(queryValues.Get("should_show_totp_screen")),
-		AuthenticatorScannerImage:  utils.ParseString(queryValues.Get("authenticator_scanner_image")),
-		AuthenticatorSecret:        utils.ParseString(queryValues.Get("authenticator_secret")),
+		AuthenticatorScannerImage:  refs.NewStringRef(scannerImage),
+		AuthenticatorSecret:        refs.NewStringRef(queryValues.Get("authenticator_secret")),
 		AuthenticatorRecoveryCodes: utils.ParseStringArray(queryValues.Get("authenticator_recovery_codes")),
 		User:                       user.AsAPIUser(),
 	}

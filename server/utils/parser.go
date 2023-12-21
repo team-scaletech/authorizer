@@ -31,23 +31,18 @@ func ParseBool(value string) *bool {
 	return &result
 }
 
-// Helper function to parse string values
-func ParseString(value string) *string {
-	if value == "" {
-		return nil
-	}
-	return &value
-}
-
 // Helper function to parse string array values
 func ParseStringArray(value string) []*string {
 	if value == "" {
 		return nil
 	}
-	splitValues := strings.Split(value, " ")
+	splitValues := strings.Split(value, "|")
+
 	var result []*string
-	for _, v := range splitValues {
-		result = append(result, &v)
+	for _, s := range splitValues {
+		temp := s
+		result = append(result, &temp)
 	}
+
 	return result
 }
