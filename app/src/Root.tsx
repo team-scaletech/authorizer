@@ -124,7 +124,7 @@ export default function Root({
 						</Route>
 						{/* VerifyOtp component to redirect on VerifyOtp screen when totp is enabled with oauth login*/}
 						<Route path="/app/verify-otp" exact>
-							<VerifyOtp />
+							<VerifyOtp urlProps={urlProps} />
 						</Route>
 					</Switch>
 				</Wrapper>

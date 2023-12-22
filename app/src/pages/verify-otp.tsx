@@ -31,9 +31,13 @@ const initTotpData: AuthResponse = {
 	authenticator_secret: '',
 };
 
-export default function VerifyOtp() {
+export default function VerifyOtp({
+	urlProps,
+}: {
+	urlProps: Record<string, any>;
+}) {
 	console.log(`INNN`);
-	
+
 	// State variables
 	const [data, setData] = useState<AuthResponse>({ ...initTotpData });
 	const [loading, setLoading] = useState(false);
@@ -125,6 +129,7 @@ export default function VerifyOtp() {
 					authenticator_scanner_image={authenticator_scanner_image || ''}
 					authenticator_secret={authenticator_secret || ''}
 					authenticator_recovery_codes={authenticator_recovery_codes || []}
+					urlProps={urlProps}
 				></AuthorizerTOTPScanner>
 			</Fragment>
 		);
@@ -137,6 +142,7 @@ export default function VerifyOtp() {
 				<AuthorizerVerifyOtp
 					email={email}
 					is_totp={should_show_totp_screen}
+					urlProps={urlProps}
 				></AuthorizerVerifyOtp>
 			</Fragment>
 		);
